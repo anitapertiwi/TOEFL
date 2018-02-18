@@ -1,0 +1,5 @@
+DELETE FROM tb_candidate
+ WHERE id NOT IN (SELECT * 
+                    FROM (SELECT MIN(n.id)
+                            FROM tb_candidate n
+                        GROUP BY n.text) x)
