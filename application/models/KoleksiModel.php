@@ -1,12 +1,12 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class QuestionModel extends CI_Model {
+class KoleksiModel extends CI_Model {
 	public $tableName;
 
 	public function __construct(){
 		parent::__construct();
-		$this->tableName = "tb_collection";
+		$this->tableName = "tb_koleksi";
 	}
 
 	public function selectAll($from=0,$offset=0){
@@ -40,9 +40,6 @@ class QuestionModel extends CI_Model {
 	}	
 	public function preProcessing($data){
 		for($i=0;$i<count($data);$i++){
-			// str_replace(array('.',',','"','!','?'), '' , $data[$i]['text']);
-			// $data[$i]['text'] = preg_replace('/^[,\s]+|[\s,]+$/', '',$data[$i]['text']);
-			// $data[$i]['text'] = preg_replace('/\s+/', ' ',$data[$i]['text']);
 			$data[$i]['text'] = preg_replace("/[^\w]/"," ",$data[$i]['text']);
 		}
 		return $data;
@@ -59,8 +56,7 @@ class QuestionModel extends CI_Model {
 		}
 	}
 	public function preTxt($data){
-		// $data = preg_replace("/[^\w]/"," ",$data);
-		$data = str_replace(["_","$","*","."],"",$data);
+	$data = str_replace(["_","$","*","."],"",$data);
 
 		return $data;
 	}
@@ -75,31 +71,14 @@ class QuestionModel extends CI_Model {
 				$ul[] = $key;
 			}
 		}
-		
-		
 		return ['underline' => implode(",",$ul),'answer' => $answer];
 	}
+
 	public function preComma($data){
 			// $data = preg_replace("/[^\w]/"," ",$data);
 		$data = str_replace(",","",$data);
 		
 		return $data;	
 	}
-//-----------------------------------------------
-//Anita
-	public function getUnderlineA($kata){
-		if(substr($kata,-1) == "_"){
-			return true;
-		}else{
-			return false;
-		}
-	}
-	public function preProcessingA($data){
-			// str_replace(array('.',',','"','!','?'), '' , $data[$i]['text']);
-			// $data[$i]['text'] = preg_replace('/^[,\s]+|[\s,]+$/', '',$data[$i]['text']);
-			// $data[$i]['text'] = preg_replace('/\s+/', ' ',$data[$i]['text']);
-			$data = preg_replace("/[^\w]/"," ",$data);
-		
-			return $data;
-	}
+
 }

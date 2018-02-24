@@ -1,4 +1,4 @@
--- phpMyAdmin SQL Dump
+﻿-- phpMyAdmin SQL Dump
 -- version 4.5.1
 -- http://www.phpmyadmin.net
 --
@@ -4057,6 +4057,7 @@ INSERT INTO `tb_dataset` (`id`, `name`, `size`) VALUES
 --
 
 CREATE TABLE `tb_koleksi` (
+  `id` int(11) NOT NULL,
   `word` varchar(200) NOT NULL,
   `pos` varchar(10) NOT NULL,
   `prev_pos` varchar(10) NOT NULL,

@@ -34,8 +34,6 @@ class Question extends CI_Controller {
 			echo "<br/>";
 
 			$this->QuestionModel->insert($insert);
-			// }
-			// }
 		}		
 		// var_dump($test);		
 	}
@@ -49,12 +47,6 @@ class Question extends CI_Controller {
 		$data['all'] = $this->QuestionModel->selectAll()->result_array();
 		$this->load->view('layout/header');
 		$this->load->view('collection-ei',$data);
-		$this->load->view('layout/footer');		
-	}
-	public function scQuestion(){
-		$data['all'] = $this->QuestionModel->selectAll()->result_array();
-		$this->load->view('layout/header');
-		$this->load->view('collection-sc',$data);
 		$this->load->view('layout/footer');		
 	}
 	public function formQuestion($edit = NULL){
@@ -130,6 +122,101 @@ class Question extends CI_Controller {
 			echo "</br>";
 		}		
 	}
+	//============================================================================
+	//Anita
+	public function scQuestion(){
+	$data['all'] = $this->KoleksiModel->selectAll()->result_array();
+		$this->load->view('layout/header');
+		$this->load->view('collection-sc',$data);
+		$this->load->view('layout/footer');		
+	}
+	public function removeTag($data){
+		$temp = explode(" ",$data);
+		foreach($temp as $key=>$j){
+			if($j == "POS" || $j == '``' || $j == "''" || $j == ':'){
+				array_splice($temp,$key,1);
+			}
+		}
+		return implode(" ",$temp);
+		
+	}	
+	public function featureExtract($kalimat){
+		$kata = explode(" ",$kalimat);
+		foreach($kata as $key=>$row){
+			if($this->QuestionModel->getUnderlineA($row)){
+				$ul[] = substr($row,0,-1);
+				$ulindex[] = $key;
+				// $ulfirst = $key;
+				$kalimatbaru[] = substr($row,0,-1);
+			}else{
+				$kalimatbaru[] = $row;
+			}
+		}
+		$rdypos = implode(" ",$kalimatbaru);
+		$pos = $this->stanford->posTag($this->QuestionModel->preProcessingA($rdypos));
+		$pos = $this->removeTag($pos);
+		$pos = explode(" ",$pos);
 
+		//Menyatukan 2 kata atau lebih.
+		for($i=0;$i<count($kalimatbaru);$i++){
+			if($i == $ulindex[0]){
+				foreach($ulindex as $row){
+					$temppos[] = $pos[$row];
+				}
+				$barukata[] = implode(" ",$ul);
+				$barupos[] = implode(" ",$temppos);
+				$true = $i;
+				$i+=(count($ulindex)-1);
+			}else{
+				$barukata[] = $kalimatbaru[$i];
+				$barupos[] = $pos[$i];
+			}
+ 		}
+ 		// $this->Tools->pre_print_r($barukata);
+ 		$counter = 0;
+ 		foreach($barukata as $key=>$row){
+ 			$insert[$counter]['word'] = $row;
+ 			$insert[$counter]['pos'] = $barupos[$key];
+ 			if($key == 0){
+ 				$insert[$counter]['prev_pos'] = '-';
+ 			}else{
+ 				$insert[$counter]['prev_pos'] = $barupos[$key-1];
+ 			}
+ 			if($key == count($barukata)-1){
+ 				$insert[$counter]['next_pos'] = '-';
+ 			}else{
+ 				$insert[$counter]['next_pos'] = $barupos[$key+1];
+ 			}
+ 			$insert[$counter]['position'] = $key;
+ 			$insert[$counter]['sentence'] = count($barukata);
+ 			$cword = 0;
+ 			foreach($barukata as $row2){
+ 				if($row2 == $row){
+ 					$cword++;
+ 				}
+ 			}
+ 			$insert[$counter]['word_length'] = $cword;
+ 			if($key == $true){
+ 				$insert[$counter]['target'] = 1;
+ 			}else{
+ 				$insert[$counter]['target'] = 0;
+ 			}
+ 			$counter++;
+ 			$this->Tools->pre_print_r($insert);
+ 		}
+ 		return $insert;
 
+	}
+	public function fromTxt2(){
+		$test = file_get_contents(FCPATH.'datasets/koleksianita/Coba.txt');
+		$test = explode("@@",$test);
+		// $this->Tools->pre_print_r($test);
+		for($i=0;$i<count($test);$i++){
+			$this->Tools->pre_print_r($test);
+			$hasil = $this->featureExtract($test[$i]);
+			foreach($hasil as $row){
+				$this->KoleksiModel->insert($row);
+			}
+		}		
+	}	
 }
