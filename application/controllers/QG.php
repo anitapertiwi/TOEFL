@@ -1,4 +1,4 @@
-c<?php
+<?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class QG extends CI_Controller {
@@ -116,11 +116,216 @@ class QG extends CI_Controller {
 		$this->load->view('candidate',$data);
 		$this->load->view('layout/footer');
 	}
-	public function generate(){
-		$data['news'] = $this->DatasetModel->selectAll()->result_array();
-		$this->load->view('layout/header');
-		$this->load->view('home',$data);
-		$this->load->view('layout/footer');	
+	public function removeTag($data){
+		$temp = explode(" ",$data);
+		foreach($temp as $key=>$j){
+			if($j == "POS" || $j == '``' || $j == "''" || $j == ':' || $j == ","){
+				array_splice($temp,$key,1);
+			}
+		}
+		return implode(" ",$temp);
+		
+	}		
+	public function featureExtract($kalimat){
+		error_reporting(0);
+		$numPOS = [
+		'CC' => 1,
+		'CD' => 2,
+		'DT' => 3,
+		'EX' => 4,
+		'FW' => 5,
+		'IN' => 6,
+		'JJ' => 7,
+		'JJR' => 8,
+		'JJS' => 9,
+		'LS' => 10,
+		'MD' => 11,
+		'NN' => 12,
+		'NNS' => 13,
+		'NNP' => 14,
+		'NNPS' => 15,
+		'PDT' => 16,
+		'POS' => 17,
+		'PRP' => 18,
+		'PRP$' => 19,
+		'RB' => 20,
+		'RBR' => 21,
+		'RBS' => 22,
+		'RP' => 23,
+		'SYM' => 24,
+		'TO' => 25,
+		'UH' => 26,
+		'VB' => 27,
+		'VBD' => 28,
+		'VBG' => 29,
+		'VBN' => 30,
+		'VBP' => 31,
+		'VBZ' => 32,
+		'WDT' => 33,
+		'WP' => 34,
+		'WP$' => 35,
+		'WRB' => 36,
+		'0' => 0
+				];		
+		$pos = $this->stanford->posTag($kalimat);
+		$pos = $this->removeTag($pos);
+		$posbagi = explode(" ",$pos);
+		$kata = explode(" ",$kalimat);
+		$counter = 0;
+		foreach($kata as $key=>$row){
+			$dt[$counter][0] = $numPOS[$posbagi[$key]] * 2.86 - 1;
+ 			if($key == 0){
+ 				$dt[$counter][1] = '0';
+ 			}else{
+ 				$dt[$counter][1] = $posbagi[$key-1];
+ 			}
+ 			if($dt[$counter][1] == '0'){
+ 				$dt[$counter][1] = 0;
+ 			}else{
+ 				$dt[$counter][1] = $numPOS[$dt[$counter][1]] * 2.86 - 1;
+ 			}
+ 			if($key == count($kata)-1){
+ 				$dt[$counter][2] = '0';
+ 			}else{
+ 				$dt[$counter][2] = $posbagi[$key+1];
+ 			}
+ 			$dt[$counter][2] = $numPOS[$dt[$counter][2]] * 2.86 - 1; 			
+ 			$dt[$counter][3] = $key;
+ 			$dt[$counter][4] = count($kata);
+ 			$cword = 0;
+ 			foreach($kata as $row2){
+ 				if($row2 == $row){
+ 					$cword++;
+ 				}
+ 			}
+ 			$dt[$counter][5] = $cword;
+ 			$counter++;			
+		}
+ 		return $dt;
+	}
+	public function generateSC( ){
+		$post = $this->input->post('berita');
+		$numPOS = [
+			'CC' => 1,
+			'CD' => 2,
+			'DT' => 3,
+			'EX' => 4,
+			'FW' => 5,
+			'IN' => 6,
+			'JJ' => 7,
+			'JJR' => 8,
+			'JJS' => 9,
+			'LS' => 10,
+			'MD' => 11,
+			'NN' => 12,
+			'NNS' => 13,
+			'NNP' => 14,
+			'NNPS' => 15,
+			'PDT' => 16,
+			'POS' => 17,
+			'PRP' => 18,
+			'PRP$' => 19,
+			'RB' => 20,
+			'RBR' => 21,
+			'RBS' => 22,
+			'RP' => 23,
+			'SYM' => 24,
+			'TO' => 25,
+			'UH' => 26,
+			'VB' => 27,
+			'VBD' => 28,
+			'VBG' => 29,
+			'VBN' => 30,
+			'VBP' => 31,
+			'VBZ' => 32,
+			'WDT' => 33,
+			'WP' => 34,
+			'WP$' => 35,
+			'WRB' => 36,
+			'0' => 0
+					];
+		$counter = 0;
+		foreach($post as $values){
+			// var_dump($values);
+			$row = $this->DatasetModel->selectById($values)->row_array();
+			// var_dump($row);
+			$corpus = $this->DatasetModel->sentenceSeparation(file_get_contents(FCPATH.'datasets/'.$row['name']));;
+			unset($corpus[count($corpus)-1]); // BUG
+			foreach($corpus as $row){
+				$dataTest[$counter] = $this->featureExtract($row);
+				$dataCorpus[$counter] = explode(" ",$row);
+				$dataPOS[$counter] = explode(" ",$this->stanford->posTag($row));
+				$this->removeTag($dataPOS[$counter]);
+				$counter++;
+			}
+		}
+
+		// var_dump($this->input->post());
+		$dataSelect = $this->KoleksiModel->selectAll()->result_array();
+		$counter = 0;
+		foreach($dataSelect as $key=>$values){
+			$dataTrain[$counter][0] = $numPOS[$values['pos']] * 2.86 - 1;	
+			$dataTrain[$counter][1] = $numPOS[$values['prev_pos']] * 2.86 - 1;	
+			$dataTrain[$counter][2] = $numPOS[$values['next_pos']] * 2.86 - 1;	
+			$dataTrain[$counter][3] = $values['position'];	
+			$dataTrain[$counter][4] = $values['sentence'];	
+			$dataTrain[$counter][5] = $values['word_length'];	
+			$dataTrain[$counter][6] = 0;
+			$dataTrain[$counter][7] = $values['target'];
+			$counter++;	
+ 		}
+		$dictionary['IN'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till'.'but'];
+		$dictionary['CC'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till'.'but'];		
+		$dictionary['TO'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till'];
+		$dictionary['DT'] = ['the','an','a'];
+		$dictionary['PRP'] = ['i'=>'mine','you'=>'yours','he'=>'his','she'=>'hers','it'=>'its','we'=>'ours','you'=>'yours','they'=>'theirs','her'=>'she','his'=>'he'];
+		$dictionary['PRP$'] = ['mine'=>'i','yours'=>'you','his'=>'he','hers'=>'she','its'=>'it','ours'=>'we','yours'=>'you','theirs'=>'they'];
+		$dictionary['MD'] = ['can'=>'could','may'=>'might','shall'=>'should','will'=>'would', 'must'=>'Ought to', 'could'=>'can','might'=>'may','should'=>'shall','would'=>'will','ought to'=>'must'];
+		$else = ['VB','VBD','VBG','VBZ','VBN','VBP'];
+
+ 		echo "SOAL SENTENCE COMPLETION: <br/>";
+ 		foreach($dataTest as $idx =>$baris){
+ 			echo ($idx+1).". ";	
+ 			$stats = 0;
+	 		echo "<pre>";
+ 			// var_dump($dataPOS);
+	 		// print_r($option);
+	 		echo "</pre>";
+	 		foreach($baris as $key => $row){
+	 			// var_dump($row);
+	 			$result = $this->knn->exec($dataTrain,$row,3);	
+	 			if($result == 1){
+ 					if($stats != 1){
+		 				echo "......";
+		 				// var_dump($dataPOS[$idx][$key]);
+
+	 					// var_dump($dataPOS[$idx][$key]);
+	 					// var_dump( $dictionary[$dataPOS[$idx][$key]][$rand]);
+ 						var_dump($stats);
+		 				for ($i=0; $i < 3; $i++) { 
+		 					$rand = random_int(0,count($dictionary[$dataPOS[$idx][$key]]));
+		 					$option[$idx][] = $dictionary[$dataPOS[$idx][$key]][$rand];
+		 				}
+		 				$option[$idx][] = $dataCorpus[$idx][$key];
+		 				shuffle($option);
+		 				$stats = 1;
+ 					}else{
+ 						echo $dataCorpus[$idx][$key]." ";
+
+ 					}
+	 			}else{
+	 				echo $dataCorpus[$idx][$key]." ";
+	 			}
+	 		}
+	 		echo "<br/>";
+	 		$abjad = ['A','B','C','D'];
+	 		for ($i=0; $i < 4; $i++) { 
+	 			echo $abjad[$i].". ".$option[$idx][$i].'<br/>';
+	 		}
+ 		}
+
+
+
 	}
 	public function generate_error(){
 		$data['news'] = $this->DatasetModel->selectAll()->result_array();

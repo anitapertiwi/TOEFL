@@ -14,7 +14,7 @@
               </div>
               <!-- new div below -->
               <div class="x_body">
-                <?php echo form_open('QG/show'); ?>
+                <?php echo form_open('QG/generateSC'); ?>
                   <div class="form-group">
                     <label for="exampleInputEmail1">News</label> <br>
                     <?php foreach($news as $row){ ?>

@@ -178,12 +178,12 @@ class Question extends CI_Controller {
  			$insert[$counter]['word'] = $row;
  			$insert[$counter]['pos'] = $barupos[$key];
  			if($key == 0){
- 				$insert[$counter]['prev_pos'] = '-';
+ 				$insert[$counter]['prev_pos'] = '0';
  			}else{
  				$insert[$counter]['prev_pos'] = $barupos[$key-1];
  			}
  			if($key == count($barukata)-1){
- 				$insert[$counter]['next_pos'] = '-';
+ 				$insert[$counter]['next_pos'] = '0';
  			}else{
  				$insert[$counter]['next_pos'] = $barupos[$key+1];
  			}
@@ -201,17 +201,17 @@ class Question extends CI_Controller {
  			}else{
  				$insert[$counter]['target'] = 0;
  			}
+ 			$this->Tools->pre_print_r($insert[$counter]);
  			$counter++;
- 			$this->Tools->pre_print_r($insert);
  		}
  		return $insert;
 
 	}
 	public function fromTxt2(){
-		$test = file_get_contents(FCPATH.'datasets/koleksianita/Coba.txt');
+		$test = file_get_contents(FCPATH.'datasets/koleksianita/SOAL.txt');
 		$test = explode("@@",$test);
 		// $this->Tools->pre_print_r($test);
-		for($i=0;$i<count($test);$i++){
+		for($i=0;$i<5;$i++){
 			$this->Tools->pre_print_r($test);
 			$hasil = $this->featureExtract($test[$i]);
 			foreach($hasil as $row){
