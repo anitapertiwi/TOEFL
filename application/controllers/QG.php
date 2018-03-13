@@ -275,7 +275,10 @@ class QG extends CI_Controller {
 			$counter++;	
  		}
 		$dictionary['IN'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till'.'but'];
-		$dictionary['CC'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till'.'but'];		
+		$dictionary['CC'] = ['for','and','yet','nor', 'but', 'or','so'];
+		$dictionary['WDT'] = ['which','that','whose'];
+		$dictionary['WP'] = ['who','which','whose','what','whom'];
+		$dictionary['WRB'] = ['when','where','why', 'how'];		
 		$dictionary['TO'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till'];
 		$dictionary['DT'] = ['the','an','a'];
 		$dictionary['PRP'] = ['i'=>'mine','you'=>'yours','he'=>'his','she'=>'hers','it'=>'its','we'=>'ours','you'=>'yours','they'=>'theirs','her'=>'she','his'=>'he'];
