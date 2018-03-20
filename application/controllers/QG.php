@@ -286,45 +286,67 @@ class QG extends CI_Controller {
 		$dictionary['MD'] = ['can'=>'could','may'=>'might','shall'=>'should','will'=>'would', 'must'=>'Ought to', 'could'=>'can','might'=>'may','should'=>'shall','would'=>'will','ought to'=>'must'];
 		$else = ['VB','VBD','VBG','VBZ','VBN','VBP'];
 
+		$nosoal = 1;
+		$choosentag = array();
+		$choosenkey = array();
  		echo "SOAL SENTENCE COMPLETION: <br/>";
  		foreach($dataTest as $idx =>$baris){
  			echo ($idx+1).". ";	
  			$stats = 0;
-	 		echo "<pre>";
- 			// var_dump($dataPOS);
-	 		// print_r($option);
-	 		echo "</pre>";
 	 		foreach($baris as $key => $row){
-	 			// var_dump($row);
 	 			$result = $this->knn->exec($dataTrain,$row,3);	
 	 			if($result == 1){
  					if($stats != 1){
-		 				echo "......";
-		 				// var_dump($dataPOS[$idx][$key]);
+ 						$akhir[$nosoal][] = "...";
+ 						$choosenPOS = $dataPOS[$idx][$key];
+ 						$choosenkey[$nosoal] = $dataCorpus[$idx][$key]; 
+ 						echo $choosenPOS;
 
-	 					// var_dump($dataPOS[$idx][$key]);
-	 					// var_dump( $dictionary[$dataPOS[$idx][$key]][$rand]);
- 						var_dump($stats);
-		 				for ($i=0; $i < 3; $i++) { 
-		 					$rand = random_int(0,count($dictionary[$dataPOS[$idx][$key]]));
-		 					$option[$idx][] = $dictionary[$dataPOS[$idx][$key]][$rand];
-		 				}
-		 				$option[$idx][] = $dataCorpus[$idx][$key];
-		 				shuffle($option);
 		 				$stats = 1;
  					}else{
- 						echo $dataCorpus[$idx][$key]." ";
-
+ 						$akhir[$nosoal][] = $dataCorpus[$idx][$key];
  					}
 	 			}else{
-	 				echo $dataCorpus[$idx][$key]." ";
+					$akhir[$nosoal][] = $dataCorpus[$idx][$key];
 	 			}
 	 		}
-	 		echo "<br/>";
-	 		$abjad = ['A','B','C','D'];
-	 		for ($i=0; $i < 4; $i++) { 
-	 			echo $abjad[$i].". ".$option[$idx][$i].'<br/>';
-	 		}
+	 		$except = ['NN','NNP','NNS','NNPS','JJ'];
+	 		if(!in_array($choosenPOS,$except)){
+	 			$choosentag[$nosoal] = $choosenPOS;
+	 			$nosoal++;
+	 		}else{
+	 			unset($akhir[$nosoal]);
+	 		} 
+ 		}
+ 		echo "<pre>";
+ 		print_r($akhir);
+ 		echo "</pre>";
+ 		echo "<br/>";
+
+ 		for($i=1; $i<=$nosoal; $i++){
+ 			echo $i.". ";
+ 			echo implode(" ",$akhir[$i]);
+ 			echo "<br/>";
+ 		// 	$countabj = 1;
+			// $option[$countabj] = $choosenkey[$i];
+ 		// 	while($countabj <= 3){
+			// 	$rand = random_int(0,count($dictionary[$choosentag[$i]]));
+			// 	if(in_array($dictionary[$choosentag[$i]][$rand],$option)){
+			// 	}else{
+			// 		echo "ABJ=>". $dictionary[$choosentag[$i]][$rand];
+ 		// 			echo "<br/>";
+
+			// 		$option[$countabj] = $dictionary[$choosentag[$i]][$rand];
+			// 		$countabj++;
+			// 	}
+ 		// 	}
+			// shuffle($option);
+	 	// 	$abjad = ['A','B','C','D'];
+	 	// 	for ($j=0;$j<4;$j++) { 
+	 	// 		echo $abjad[$j].". ".$option[$j].'<br/>';
+	 	// 	}
+	 	// 	unset($option);
+ 			
  		}
 
 

@@ -27,7 +27,7 @@ class News extends CI_Controller {
 		}
 	}
 	public function deb(){
-		$this->CandidateModel->insert(['idd' => 1, 'text' => "ewe enak hehe"]);
+		$this->stanford->posTag("HMM");
 	}
 	public function index2(){
 		// $data = $this->DatasetModel->selectAll(10)->result_array();

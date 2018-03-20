@@ -175,7 +175,6 @@ class Question extends CI_Controller {
  		// $this->Tools->pre_print_r($barukata);
  		$counter = 0;
  		foreach($barukata as $key=>$row){
- 			$insert[$counter]['word'] = $row;
  			$insert[$counter]['pos'] = $barupos[$key];
  			if($key == 0){
  				$insert[$counter]['prev_pos'] = '0';
@@ -196,6 +195,7 @@ class Question extends CI_Controller {
  				}
  			}
  			$insert[$counter]['word_length'] = $cword;
+ 			$insert[$counter]['word'] = $row;
  			if($key == $true){
  				$insert[$counter]['target'] = 1;
  			}else{
@@ -212,7 +212,7 @@ class Question extends CI_Controller {
 		$test = explode("@@",$test);
 		// $this->Tools->pre_print_r($test);
 		for($i=0;$i<5;$i++){
-			$this->Tools->pre_print_r($test);
+			$this->Tools->pre_print_r($test);	
 			$hasil = $this->featureExtract($test[$i]);
 			foreach($hasil as $row){
 				$this->KoleksiModel->insert($row);
