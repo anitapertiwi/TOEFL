@@ -211,12 +211,78 @@ class Question extends CI_Controller {
 		$test = file_get_contents(FCPATH.'datasets/koleksianita/SOAL.txt');
 		$test = explode("@@",$test);
 		// $this->Tools->pre_print_r($test);
-		for($i=0;$i<5;$i++){
+		for($i=0;$i<count($test);$i++){
 			$this->Tools->pre_print_r($test);	
 			$hasil = $this->featureExtract($test[$i]);
 			foreach($hasil as $row){
 				$this->KoleksiModel->insert($row);
 			}
 		}		
+	}
+	public function pulasi($skip=0){
+		$most = $this->KoleksiModel->selectByTarget(1)->result_array();
+		$indexes = array();
+		foreach($most as $row){
+			if(array_key_exists($row['pos'],$indexes)){
+				$indexes[$row['pos']]['count'] += 1;
+			}else{
+				$indexes[$row['pos']] = array(
+					'count' => 1,
+					'key' => $row['pos']
+				);
+			}
+		}
+		usort($indexes, function ($a, $b) {
+			return $a['count'] < $b['count'];
+		});		
+
+		$koleksi = $this->QuestionModel->selectAll(10,17+$skip)->result_array();
+		foreach($koleksi as $row){
+			$dat = explode(" ",$row['postext']);
+			$underline = explode(",",$row['underline']);
+			foreach($underline as $row2){
+				$tag[] = $dat[$row2];
+				$index[] = $row2;
+			}
+			$i = 0;
+			$stats = 0;
+			// var_dump(count($tag));
+			while($i<4 && $stats == 0){
+				for($j=0; $j<10;$j++){
+					// echo $indexes[$j]['key']."--".$tag[$i];
+					if($indexes[$j]['key'] == $tag[$i] && $tag[$i] != "JJ" && $tag[$i] != "NN"){
+						$stats = 1;
+						$getindex = $index[$i];
+						// echo $index[$i];
+						// echo $tag[$i];
+						break;
+					}
+				}
+				$i++;
+			}
+			if($stats == 1){
+				//kalau berhasil
+				$exp = explode(" ", $row['text']);
+				foreach($exp as $key=> $word){
+					if($key == $getindex){
+						$new[] = $word."_";
+					}else{
+						$new[] = $word;
+					}
+				}
+				$hasil = $this->featureExtract(implode(" ",$new));
+				foreach($hasil as $row){
+					// var_dump($row);
+					$this->KoleksiModel->insert($row);
+				}				
+
+			}else{
+				echo "gagal skip ->";
+			}
+			// var_dump($tag);
+			echo "<br/>";
+			unset($tag);
+			unset($index);
+		}
 	}	
 }

@@ -24,6 +24,14 @@ class KoleksiModel extends CI_Model {
 
 		return $this->db->get();
 	}
+
+	public function selectByTarget($id){
+		$this->db->select('*');
+		$this->db->from($this->tableName);
+		$this->db->where('target',$id);
+
+		return $this->db->get();
+	}
 	
 	public function insert($data){
 		$this->db->insert($this->tableName,$data);

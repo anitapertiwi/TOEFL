@@ -7,7 +7,7 @@ require_once(dirname(__FILE__)) . '/PHP-Stanford-NLP-master/autoload.php';
 
 class Stanford {
 
-	public function posTagz($sentences){
+	public function posTag($sentences){
 		$coreNLP = new CorenlpAdapter();
 		$coreNLP->getOutput($sentences);
 		$data = $coreNLP->getWordValues($coreNLP->trees[0]);
@@ -17,7 +17,7 @@ class Stanford {
 		}   
 		return implode(" ",$ret);
 	}
-	public function posTag($sentence){
+	public function posTagz($sentence){
 
 		$path = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'stanford-postagger-2017-06-09';
 		// echo($path);

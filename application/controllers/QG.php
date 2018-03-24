@@ -116,7 +116,7 @@ class QG extends CI_Controller {
 		$this->load->view('candidate',$data);
 		$this->load->view('layout/footer');
 	}
-	public function removeTag($data){
+	public function removeTagh($data){
 		$temp = explode(" ",$data);
 		foreach($temp as $key=>$j){
 			if($j == "POS" || $j == '``' || $j == "''" || $j == ':' || $j == ","){
@@ -168,7 +168,7 @@ class QG extends CI_Controller {
 		'0' => 0
 				];		
 		$pos = $this->stanford->posTag($kalimat);
-		$pos = $this->removeTag($pos);
+		$pos = $this->removeTagh($pos);
 		$posbagi = explode(" ",$pos);
 		$kata = explode(" ",$kalimat);
 		$counter = 0;
@@ -203,8 +203,21 @@ class QG extends CI_Controller {
 		}
  		return $dt;
 	}
+	public function get_http_response_code($url) {
+	    $headers = get_headers($url);
+	    return substr($headers[0], 9, 3);
+	}	
+	public function preProcessing($data){
+			str_replace(array('.',',','"','!','?','-'), '' , $data);
+			// $data[$i]['text'] = preg_replace('/^[,\s]+|[\s,]+$/', '',$data[$i]['text']);
+			// $data[$i]['text'] = preg_replace('/\s+/', ' ',$data[$i]['text']);
+			// $data = preg_replace("/[^\w]/"," ",$data);
+		
+			return $data;
+	}	
 	public function generateSC( ){
 		$post = $this->input->post('berita');
+		$numevery = $this->input->post('number');
 		$numPOS = [
 			'CC' => 1,
 			'CD' => 2,
@@ -246,16 +259,17 @@ class QG extends CI_Controller {
 					];
 		$counter = 0;
 		foreach($post as $values){
-			// var_dump($values);
 			$row = $this->DatasetModel->selectById($values)->row_array();
-			// var_dump($row);
 			$corpus = $this->DatasetModel->sentenceSeparation(file_get_contents(FCPATH.'datasets/'.$row['name']));;
-			unset($corpus[count($corpus)-1]); // BUG
+			unset($corpus[count($corpus)-1]); // Fix BUG
 			foreach($corpus as $row){
 				$dataTest[$counter] = $this->featureExtract($row);
 				$dataCorpus[$counter] = explode(" ",$row);
-				$dataPOS[$counter] = explode(" ",$this->stanford->posTag($row));
-				$this->removeTag($dataPOS[$counter]);
+				$temptag = $this->stanford->posTag($this->preProcessing($row));
+				// var_dump($dataPOS[$counter]);
+				$dataPOS[$counter] = explode(" ",$this->removeTagh($temptag));
+				// var_dump($dataPOS[$counter]);
+				// echo "<br/>";
 				$counter++;
 			}
 		}
@@ -276,81 +290,112 @@ class QG extends CI_Controller {
  		}
 		$dictionary['IN'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till'.'but'];
 		$dictionary['CC'] = ['for','and','yet','nor', 'but', 'or','so'];
-		$dictionary['WDT'] = ['which','that','whose'];
+		$dictionary['WDT'] = ['which','that','whose','whom','tambahin','tambah'];
 		$dictionary['WP'] = ['who','which','whose','what','whom'];
 		$dictionary['WRB'] = ['when','where','why', 'how'];		
 		$dictionary['TO'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till'];
-		$dictionary['DT'] = ['the','an','a'];
-		$dictionary['PRP'] = ['i'=>'mine','you'=>'yours','he'=>'his','she'=>'hers','it'=>'its','we'=>'ours','you'=>'yours','they'=>'theirs','her'=>'she','his'=>'he'];
-		$dictionary['PRP$'] = ['mine'=>'i','yours'=>'you','his'=>'he','hers'=>'she','its'=>'it','ours'=>'we','yours'=>'you','theirs'=>'they'];
-		$dictionary['MD'] = ['can'=>'could','may'=>'might','shall'=>'should','will'=>'would', 'must'=>'Ought to', 'could'=>'can','might'=>'may','should'=>'shall','would'=>'will','ought to'=>'must'];
-		$else = ['VB','VBD','VBG','VBZ','VBN','VBP'];
-
+		$dictionary['DT'] = ['the','an','a','cek','kec'];
+		$dictionary['PRP'] = ['i','mine','you','yours','he','his','she','hers','it','its','we','ours','you','yours','they','theirs','her','she','his','he'];
+		$dictionary['PRP$'] = ['mine','i','yours','you','his','he','hers','she','its','it','ours','we','yours','you','theirs','they'];
+		$dictionary['MD'] = ['can','could','may','might','shall','should','will','would', 'must','Ought to', 'could','can','might','may','should','shall','would','will','ought to','must'];
+		$heu = ['IN','CC','WDT','WP','WRB','TO','DT','PRP','PRP$','MD'];
+		$vb = ['VB','VBD','VBG','VBZ','VBN','VBP'];
+		include APPPATH.'views/layout/header.php';
+		echo "<div class='right_col' role='main'>";
+		echo "<div class='row'>";
+		echo "<div class='xpanel'>";
+		echo "<h2> Generated Questions </h2>";
+		echo "<b>Date</b>&nbsp;: ".date("F j, Y, g:i a");
+		echo "<br/>";  
 		$nosoal = 1;
 		$choosentag = array();
 		$choosenkey = array();
- 		echo "SOAL SENTENCE COMPLETION: <br/>";
  		foreach($dataTest as $idx =>$baris){
- 			echo ($idx+1).". ";	
  			$stats = 0;
 	 		foreach($baris as $key => $row){
-	 			$result = $this->knn->exec($dataTrain,$row,3);	
-	 			if($result == 1){
- 					if($stats != 1){
- 						$akhir[$nosoal][] = "...";
- 						$choosenPOS = $dataPOS[$idx][$key];
- 						$choosenkey[$nosoal] = $dataCorpus[$idx][$key]; 
- 						echo $choosenPOS;
-
-		 				$stats = 1;
- 					}else{
- 						$akhir[$nosoal][] = $dataCorpus[$idx][$key];
- 					}
-	 			}else{
-					$akhir[$nosoal][] = $dataCorpus[$idx][$key];
+	 			$result = $this->knn->exec($dataTrain,$row,3); //Ganti K disini
+ 				// echo $result;
+	 			if($result == 1 && $stats == 0){
+	 				// echo $result;
+	 				$chooseindex = $key;
+	 				$choosetag = $dataPOS[$idx][$key];
+	 				$ckey[$nosoal] = $dataCorpus[$idx][$key];
+	 				$ctag[$nosoal] = $choosetag;
+	 				// var_dump($choosetag);
+	 				if(in_array($choosetag,$heu)){
+	 					$ctipe[$nosoal] = "heu";
+	 					$stats = 1;
+	 					break;
+	 				}else if(in_array($choosetag,$vb)){
+	 					$ctipe[$nosoal] = "vb";
+	 					$stats = 1;
+	 					break;
+	 				}else{
+	 					$ctipe[$nosoal] = "skip";
+	 					// $stats = 0;
+	 				}
 	 			}
 	 		}
-	 		$except = ['NN','NNP','NNS','NNPS','JJ'];
-	 		if(!in_array($choosenPOS,$except)){
-	 			$choosentag[$nosoal] = $choosenPOS;
+	 		if($stats == 1){
+	 			foreach($dataCorpus[$idx] as $key => $row){
+	 				if($key == $chooseindex){
+	 					$akhir[$nosoal][] = "...";
+	 				}else{
+	 					$akhir[$nosoal][] = $row;
+	 				}
+	 			}
 	 			$nosoal++;
-	 		}else{
-	 			unset($akhir[$nosoal]);
-	 		} 
+	 		}
  		}
- 		echo "<pre>";
- 		print_r($akhir);
- 		echo "</pre>";
- 		echo "<br/>";
-
- 		for($i=1; $i<=$nosoal; $i++){
+		echo "<b>Number of Question</b>&nbsp;: ".($nosoal-1);
+		echo "<br/>";
+	 		// print_r($akhir);
+	 		// print_r($nosoal);
+ 		for($i=1; $i<$nosoal; $i++){
  			echo $i.". ";
  			echo implode(" ",$akhir[$i]);
+ 			echo "--".$ckey[$i]."--";
+ 			echo $ctag[$i];
+ 			// var_dump($ctipe[$i]);
  			echo "<br/>";
- 		// 	$countabj = 1;
-			// $option[$countabj] = $choosenkey[$i];
- 		// 	while($countabj <= 3){
-			// 	$rand = random_int(0,count($dictionary[$choosentag[$i]]));
-			// 	if(in_array($dictionary[$choosentag[$i]][$rand],$option)){
-			// 	}else{
-			// 		echo "ABJ=>". $dictionary[$choosentag[$i]][$rand];
- 		// 			echo "<br/>";
 
-			// 		$option[$countabj] = $dictionary[$choosentag[$i]][$rand];
-			// 		$countabj++;
-			// 	}
- 		// 	}
-			// shuffle($option);
-	 	// 	$abjad = ['A','B','C','D'];
-	 	// 	for ($j=0;$j<4;$j++) { 
-	 	// 		echo $abjad[$j].". ".$option[$j].'<br/>';
-	 	// 	}
-	 	// 	unset($option);
- 			
+			$option[0] = strtolower($ckey[$i]);
+ 			$countabj = 1;
+			if($ctipe[$i] == "vb" && $this->get_http_response_code("http://api.ultralingua.com/api/conjugations/eng/".$this->preProcessing($ckey[$i])) != '404'){
+				$json = json_decode(file_get_contents("http://api.ultralingua.com/api/conjugations/eng/".$this->preProcessing($ckey[$i])));
+			} 			
+ 			while($countabj < 4){
+ 				if($ctipe[$i] == "heu"){
+ 					// echo $ctag[$i];
+					$rand = random_int(0,count($dictionary[$ctag[$i]]));
+					if(!in_array($dictionary[$ctag[$i]][$rand],$option) && $dictionary[$ctag[$i]][$rand] != NULL){
+						// var_dump($dictionary[$ctag[$i]][$rand]);
+						$option[$countabj] = $dictionary[$ctag[$i]][$rand];
+						// $countabj++;
+ 						$countabj++;
+					}
+ 				}else if($ctipe[$i] == "vb"){
+ 					// echo $this->get_http_response_code("http://api.ultralingua.com/api/conjugations/eng/".$this->preProcessing($ckey[$i]));
+					$rand = random_int(0,20);
+					// var_dump($json[$rand]->surfaceform);
+					if(!in_array($json[$rand]->surfaceform,$option)){
+						$option[$countabj] = $json[$rand]->surfaceform;
+						$countabj++;
+					}
+ 					// $countabj++;
+ 				}
+ 			}
+			shuffle($option);
+			// print_r($option);
+	 		$abjad = ['A','B','C','D'];
+	 		for ($j=0;$j<4;$j++) { 
+	 			echo $abjad[$j].". ".$option[$j].'<br/>';
+	 		}
+	 		unset($option);
+
  		}
-
-
-
+			echo "</div></div></div>"; 		
+		include APPPATH.'views/layout/footer.php';
 	}
 	public function generate_error(){
 		$data['news'] = $this->DatasetModel->selectAll()->result_array();
