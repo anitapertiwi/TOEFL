@@ -217,7 +217,7 @@ class QG extends CI_Controller {
 	}	
 	public function generateSC( ){
 		$post = $this->input->post('berita');
-		$numevery = $this->input->post('number');
+		$numevery = $this->input->post('num');
 		$numPOS = [
 			'CC' => 1,
 			'CD' => 2,
@@ -257,24 +257,38 @@ class QG extends CI_Controller {
 			'WRB' => 36,
 			'0' => 0
 					];
-		$counter = 0;
+		$sortir = array();
 		foreach($post as $values){
 			$row = $this->DatasetModel->selectById($values)->row_array();
 			$corpus = $this->DatasetModel->sentenceSeparation(file_get_contents(FCPATH.'datasets/'.$row['name']));;
 			unset($corpus[count($corpus)-1]); // Fix BUG
+			$counterSortir = 0;
 			foreach($corpus as $row){
-				$dataTest[$counter] = $this->featureExtract($row);
-				$dataCorpus[$counter] = explode(" ",$row);
-				$temptag = $this->stanford->posTag($this->preProcessing($row));
-				// var_dump($dataPOS[$counter]);
-				$dataPOS[$counter] = explode(" ",$this->removeTagh($temptag));
-				// var_dump($dataPOS[$counter]);
-				// echo "<br/>";
-				$counter++;
+				// var_dump($row);
+				if(count(explode(" ",$this->preProcessing($row))) >= 10 && count(explode(" ",$this->preProcessing($row))) <= 30){
+					$sortir[] = $row;
+					$counterSortir++;
+				}
+				// var_dump($numevery*2);
+				if($counterSortir  == ($numevery*2)){
+					break;
+				}
 			}
 		}
+		echo "<pre>";
+		print_r($sortir);
+		echo "</pre>";
+		$counter = 0;
+		foreach($sortir as $row){
+			$dataTest[$counter] = $this->featureExtract($this->preProcessing($row));
+			$dataCorpus[$counter] = explode(" ",$this->preProcessing($row));
+			$temptag = $this->stanford->posTag($this->preProcessing($row));
+			$dataPOS[$counter] = explode(" ",$this->removeTagh($temptag));
+			$counter++;
+		}
 
-		// var_dump($this->input->post());
+
+
 		$dataSelect = $this->KoleksiModel->selectAll()->result_array();
 		$counter = 0;
 		foreach($dataSelect as $key=>$values){
@@ -288,7 +302,8 @@ class QG extends CI_Controller {
 			$dataTrain[$counter][7] = $values['target'];
 			$counter++;	
  		}
-		$dictionary['IN'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till'.'but'];
+
+		$dictionary['IN'] = ['of','in','by','for','without','with','that','on','from','as','some','abord','about','above','over','after','against','along','alongside','among','around','as far as','at', 'behind','beside','besides','below','beneath','between','beyond','during','except','into','like','since','till','but'];
 		$dictionary['CC'] = ['for','and','yet','nor', 'but', 'or','so'];
 		$dictionary['WDT'] = ['which','that','whose','whom','tambahin','tambah'];
 		$dictionary['WP'] = ['who','which','whose','what','whom'];
@@ -334,6 +349,7 @@ class QG extends CI_Controller {
 	 					$ctipe[$nosoal] = "skip";
 	 					// $stats = 0;
 	 				}
+	 					var_dump($choosetag);
 	 			}
 	 		}
 	 		if($stats == 1){
