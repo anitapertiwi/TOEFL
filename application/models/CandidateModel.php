@@ -228,7 +228,7 @@ class CandidateModel extends CI_Model {
 			$this->update($i['id'],['postext'=>implode(" ",$temp)]);
 		}
 	}
-	public function removeTagRet($data){
+	public function removeTagRet($data){ 
 			$temp = explode(" ",$data);
 			foreach($temp as $key=>$j){
 				if($j == "POS" || $j == '``' || $j == "''" || $j == ':'){

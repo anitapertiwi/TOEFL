@@ -264,13 +264,11 @@ class QG extends CI_Controller {
 			unset($corpus[count($corpus)-1]); // Fix BUG
 			$counterSortir = 0;
 			foreach($corpus as $row){
-				// var_dump($row);
 				if(count(explode(" ",$this->preProcessing($row))) >= 10 && count(explode(" ",$this->preProcessing($row))) <= 30){
 					$sortir[] = $row;
 					$counterSortir++;
 				}
-				// var_dump($numevery*2);
-				if($counterSortir  == ($numevery*2)){
+				if($counterSortir  == ($numevery)){
 					break;
 				}
 			}
@@ -329,14 +327,13 @@ class QG extends CI_Controller {
  			$stats = 0;
 	 		foreach($baris as $key => $row){
 	 			$result = $this->knn->exec($dataTrain,$row,3); //Ganti K disini
- 				// echo $result;
+ 					// echo $idx;
 	 			if($result == 1 && $stats == 0){
-	 				// echo $result;
 	 				$chooseindex = $key;
 	 				$choosetag = $dataPOS[$idx][$key];
+	 				// echo $choosetag;
 	 				$ckey[$nosoal] = $dataCorpus[$idx][$key];
 	 				$ctag[$nosoal] = $choosetag;
-	 				// var_dump($choosetag);
 	 				if(in_array($choosetag,$heu)){
 	 					$ctipe[$nosoal] = "heu";
 	 					$stats = 1;
@@ -349,9 +346,24 @@ class QG extends CI_Controller {
 	 					$ctipe[$nosoal] = "skip";
 	 					// $stats = 0;
 	 				}
-	 					var_dump($choosetag);
 	 			}
 	 		}
+	 		// echo "<br>";
+			$most = $this->KoleksiModel->selectByTarget(1)->result_array();
+			$indexes = array();
+			foreach($most as $row){
+				if(array_key_exists($row['pos'],$indexes)){
+					$indexes[$row['pos']]['count'] += 1;
+				}else{
+					$indexes[$row['pos']] = array(
+						'count' => 1,
+						'key' => $row['pos']
+					);
+				}
+			}
+			usort($indexes, function ($a, $b) {
+				return $a['count'] < $b['count'];
+			});			 		
 	 		if($stats == 1){
 	 			foreach($dataCorpus[$idx] as $key => $row){
 	 				if($key == $chooseindex){
@@ -361,12 +373,52 @@ class QG extends CI_Controller {
 	 				}
 	 			}
 	 			$nosoal++;
+	 		}else{
+ 				$statsq = 0;
+	 			while($statsq == 0){
+	 				$randq = random_int(0,10);
+	 				foreach($dataPOS[$idx] as $key=>$row){
+	 					if($indexes[$randq]['key'] == $row){
+	 						$chooseindex = $key;
+			 				$choosetag = $dataPOS[$idx][$key];
+			 				$ckey[$nosoal] = $dataCorpus[$idx][$key];
+			 				$ctag[$nosoal] = $choosetag;
+			 				if(in_array($choosetag,$heu)){
+			 					$ctipe[$nosoal] = "heu";
+			 					break;
+	 							$statsq = 1;
+			 				}else if(in_array($choosetag,$vb)){
+			 					$ctipe[$nosoal] = "vb";
+			 					$statsq = 1;
+			 					break;
+			 				}else{
+			 					$ctipe[$nosoal] = "skip";
+			 				}
+	 					}
+	 				}
+	 			}
+	 			if($statsq == 1){
+		 			foreach($dataCorpus[$idx] as $key => $row){
+		 				if($key == $chooseindex){
+		 					$akhir[$nosoal][] = "...";
+		 				}else{
+		 					$akhir[$nosoal][] = $row;
+		 				}
+		 			}
+		 			$nosoal++;
+	 			}
 	 		}
+	 		// $nosoal++;
  		}
+
 		echo "<b>Number of Question</b>&nbsp;: ".($nosoal-1);
 		echo "<br/>";
-	 		// print_r($akhir);
-	 		// print_r($nosoal);
+		// echo "<pre>";
+		// var_dump($akhir);
+		// echo "</pre>";
+
+	 // // 		// print_r($akhir);
+	 // // 		// print_r($nosoal);
  		for($i=1; $i<$nosoal; $i++){
  			echo $i.". ";
  			echo implode(" ",$akhir[$i]);
@@ -410,8 +462,13 @@ class QG extends CI_Controller {
 	 		unset($option);
 
  		}
-			echo "</div></div></div>"; 		
+			echo "</div></div></div>";
 		include APPPATH.'views/layout/footer.php';
+	}
+	public function generate(){
+		$this->load->view('layout/header');
+		$this->load->view('generate');
+		$this->load->view('layout/footer');	
 	}
 	public function generate_error(){
 		$data['news'] = $this->DatasetModel->selectAll()->result_array();

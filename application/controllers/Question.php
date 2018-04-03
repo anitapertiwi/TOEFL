@@ -38,9 +38,9 @@ class Question extends CI_Controller {
 		// var_dump($test);		
 	}
 	public function allQuestion(){
-		$data['all'] = $this->QuestionModel->selectAll()->result_array();
+		// $data['all'] = $this->QuestionModel->selectAll()->result_array();
 		$this->load->view('layout/header');
-		$this->load->view('collection',$data);
+		$this->load->view('collection');
 		$this->load->view('layout/footer');		
 	}
 	public function eiQuestion(){
